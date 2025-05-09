@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         CAVEMINES Hack
+// @name         Mines 1 Win Hacker
 // @namespace    http://tampermonkey.net/
-// @version      1.3
-// @description  Показывает бомбы и сундуки в реальном времени
-// @match        https://1wqjnb.com/casino/*
+// @version      3.0
+// @description  Показывает все бомбы и сундуки в Mines 1 Win
+// @match        https://1wqjnb.com/casino/play/1play_1play_mines?p=ur4o*
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
@@ -12,72 +12,97 @@
     'use strict';
 
     // Ждем полной загрузки игры
-    setTimeout(() => {
-        const highlightElements = () => {
-            // 1. Находим игровое поле (адаптируйте под ваш случай)
-            const gameField = document.querySelector('.game-field') || 
-                             document.querySelector('.game-board') ||
-                             document.querySelector('main');
+    const init = () => {
+        // 1. Находим игровое поле
+        const gameBoard = document.querySelector('.game-container') || 
+                         document.querySelector('.mines-field') ||
+                         document.querySelector('main');
 
-            // 2. Ищем все кликабельные элементы внутри поля
-            const clickableItems = gameField.querySelectorAll('div, button, a');
+        if (!gameBoard) {
+            console.log('[Mines Hacker] Игровое поле не найдено, повторная попытка...');
+            setTimeout(init, 2000);
+            return;
+        }
 
-            // 3. Помечаем элементы
-            clickableItems.forEach(item => {
-                // Если элемент содержит изображение бомбы
-                if (item.innerHTML.includes('bomb') || 
-                    item.innerHTML.includes('ловушка') || 
-                    item.getAttribute('onclick')?.includes('bomb')) {
-                    item.style.cssText = `
-                        background: red !important;
-                        border: 3px solid black !important;
-                        color: white !important;
-                    `;
-                    item.innerHTML = '💣 БОМБА';
+        console.log('[Mines Hacker] Игра обнаружена!');
+
+        // 2. Создаем стили для подсветки
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .mines-bomb {
+                background: #ff0000 !important;
+                color: white !important;
+                font-weight: bold !important;
+                border: 3px solid black !important;
+            }
+            .mines-treasure {
+                background: #00ff00 !important;
+                color: white !important;
+                font-weight: bold !important;
+                border: 3px solid black !important;
+            }
+            #mines-hack-panel {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 10px;
+                z-index: 99999;
+                font-family: Arial;
+                border: 2px solid gold;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 3. Функция для поиска и пометки элементов
+        const scanField = () => {
+            // Ищем все клетки
+            const cells = gameBoard.querySelectorAll('div[class*="cell"], div[class*="tile"]');
+
+            cells.forEach(cell => {
+                // Проверяем на бомбу
+                if (cell.getAttribute('data-bomb') === 'true' || 
+                    cell.innerHTML.includes('bomb') || 
+                    cell.textContent === 'X') {
+                    cell.classList.add('mines-bomb');
+                    cell.textContent = '💣';
                 }
-                
-                // Если элемент содержит изображение сундука
-                if (item.innerHTML.includes('treasure') || 
-                    item.innerHTML.includes('сундук') || 
-                    item.getAttribute('onclick')?.includes('win')) {
-                    item.style.cssText = `
-                        background: green !important;
-                        border: 3px solid black !important;
-                        color: white !important;
-                    `;
-                    item.innerHTML = '💰 СУНДУК';
+                // Проверяем на сундук
+                else if (cell.getAttribute('data-treasure') === 'true' || 
+                         cell.innerHTML.includes('diamond') || 
+                         cell.textContent === '💎') {
+                    cell.classList.add('mines-treasure');
+                    cell.textContent = '💰';
                 }
             });
 
-            // 4. Создаем информационную панель
-            let panel = document.getElementById('hack-panel');
+            // Обновляем панель
+            updatePanel();
+        };
+
+        // 4. Панель информации
+        const updatePanel = () => {
+            let panel = document.getElementById('mines-hack-panel');
             if (!panel) {
                 panel = document.createElement('div');
-                panel.id = 'hack-panel';
-                panel.style.cssText = `
-                    position: fixed;
-                    top: 10px;
-                    left: 10px;
-                    background: rgba(0,0,0,0.8);
-                    color: white;
-                    padding: 10px;
-                    z-index: 99999;
-                    font-family: Arial;
-                    border: 2px solid gold;
-                `;
+                panel.id = 'mines-hack-panel';
                 document.body.appendChild(panel);
             }
             panel.innerHTML = `
-                <div>💣 Бомб: ${document.querySelectorAll('[style*="background: red"]').length}</div>
-                <div>💰 Сундуков: ${document.querySelectorAll('[style*="background: green"]').length}</div>
-                <div>🔄 Обновлено: ${new Date().toLocaleTimeString()}</div>
+                <div>💣 Бомб: ${document.querySelectorAll('.mines-bomb').length}</div>
+                <div>💰 Сундуков: ${document.querySelectorAll('.mines-treasure').length}</div>
+                <div>🕒 ${new Date().toLocaleTimeString()}</div>
             `;
         };
 
-        // Запускаем проверку каждые 2 секунды
-        setInterval(highlightElements, 2000);
-        
-        // Первый запуск
-        highlightElements();
-    }, 5000); // Даем игре 5 секунд на загрузку
+        // Запускаем сканирование каждые 2 секунды
+        setInterval(scanField, 2000);
+        scanField();
+
+        console.log('[Mines Hacker] Скрипт активирован!');
+    };
+
+    // Даем игре 10 секунд на загрузку
+    setTimeout(init, 10000);
 })();
