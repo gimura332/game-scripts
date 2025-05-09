@@ -1,65 +1,58 @@
 // ==UserScript==
-// @name         Treasure Hunt Helper
-// @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Показывает бомбы (X) и сундуки (☐) в реальном времени
+// @name         Bomb Finder Ultimate
 // @match        https://1wqjnb.com/casino/play/1play_1play_mines?p=ur4o*
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
 
-(function() {
-    'use strict';
-
-    // Стиль для подсветки элементов
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .bomb-cell { background: rgba(255, 0, 0, 0.5) !important; }
-        .treasure-cell { background: rgba(0, 255, 0, 0.5) !important; }
-        .hint-label {
+function cheat() {
+    // 1. Находим ВСЕ элементы на странице
+    const allElements = document.querySelectorAll('*');
+    
+    // 2. Помечаем бомбы и сундуки
+    allElements.forEach(el => {
+        if (el.textContent === 'X' || el.textContent === '☒') {
+            el.style.cssText = `
+                background: red !important;
+                color: white !important;
+                border: 2px solid black !important;
+            `;
+            el.textContent = '💣 БОМБА';
+        }
+        
+        if (el.textContent === '☐' || el.textContent === '*') {
+            el.style.cssText = `
+                background: green !important;
+                color: white !important;
+                border: 2px solid black !important;
+            `;
+            el.textContent = '💰 СУНДУК';
+        }
+    });
+    
+    // 3. Статистика в углу экрана
+    const bombs = document.querySelectorAll('[style*="background: red"]').length;
+    const treasures = document.querySelectorAll('[style*="background: green"]').length;
+    
+    let hint = document.getElementById('cheat-hint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'cheat-hint';
+        hint.style.cssText = `
             position: fixed;
             top: 10px;
             left: 10px;
             background: black;
             color: white;
             padding: 10px;
-            z-index: 9999;
+            z-index: 99999;
             font-family: Arial;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Функция поиска элементов
-    function scanField() {
-        // Ищем все ячейки поля (адаптируйте под ваш HTML)
-        const cells = document.querySelectorAll('div.cell, td.cell, span.cell');
-
-        cells.forEach(cell => {
-            // Проверяем содержимое ячейки
-            if (cell.textContent.includes('X') || cell.textContent.includes('☒')) {
-                cell.classList.add('bomb-cell');
-            } else if (cell.textContent.includes('☐') || cell.textContent.includes('*')) {
-                cell.classList.add('treasure-cell');
-            }
-        });
-
-        // Показываем статистику
-        const bombsFound = document.querySelectorAll('.bomb-cell').length;
-        const treasuresFound = document.querySelectorAll('.treasure-cell').length;
-
-        // Обновляем подсказку
-        let hint = document.querySelector('.hint-label');
-        if (!hint) {
-            hint = document.createElement('div');
-            hint.className = 'hint-label';
-            document.body.appendChild(hint);
-        }
-        hint.textContent = `💣 Бомб: ${bombsFound} | 💰 Сундуков: ${treasuresFound}`;
+            font-size: 18px;
+        `;
+        document.body.appendChild(hint);
     }
+    hint.textContent = `💣 Бомб: ${bombs} | 💰 Сундуков: ${treasures}`;
+}
 
-    // Запускаем сканирование каждую секунду
-    setInterval(scanField, 1000);
-
-    // Первый запуск
-    scanField();
-})();
+// Запускаем каждую секунду
+setInterval(cheat, 1000);
